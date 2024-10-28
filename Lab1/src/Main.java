@@ -25,7 +25,7 @@ public class Main {
         SchoolChild schoolChild2 = new SchoolChild("School2", "Address2", 2005, 2, 200);
         SchoolChild schoolChild3 = new SchoolChild("School3", "Address3", 2006, 3, 300);
         University university1 = new University("University1", "Address4", 2006, 1, 10);
-        University university2 = new University("University2", "Address5", 2004, 2, 20);
+        University university2 = new University("University2", "Address5", 2004, 1, 20);
         University university3 = new University("University3", "Address6", 2001, 3, 30);
         School[] schools = {schoolChild1, schoolChild2, schoolChild3, university1, university2, university3};
 
