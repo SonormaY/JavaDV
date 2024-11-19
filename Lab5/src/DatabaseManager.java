@@ -22,7 +22,6 @@ public class DatabaseManager extends JFrame {
     }
 
     private void initUI() {
-        // Меню
         JMenuBar menuBar = new JMenuBar();
         JMenu dbMenu = getjMenu();
         menuBar.add(dbMenu);
@@ -59,7 +58,6 @@ public class DatabaseManager extends JFrame {
 
         setJMenuBar(menuBar);
 
-        // Дерево та таблиця
         dbTree = new JTree();
         dbTree.addTreeSelectionListener(e -> loadTableData(e.getPath()));
         JScrollPane treeScrollPane = new JScrollPane(dbTree);
@@ -211,8 +209,7 @@ public class DatabaseManager extends JFrame {
         return new MetaData(columnNames, data);
     }
 
-    private record MetaData(Vector<String> columnNames, Vector<Vector<Object>> data) {
-    }
+    private record MetaData(Vector<String> columnNames, Vector<Vector<Object>> data) { }
 
     private void addContextMenuToTree(JTree tree) {
         tree.addMouseListener(new MouseAdapter() {
@@ -225,7 +222,6 @@ public class DatabaseManager extends JFrame {
                     tree.setSelectionPath(path);
                     DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) path.getLastPathComponent();
 
-                    // Перевіряємо, чи це вузол таблиці
                     if (selectedNode.isLeaf()) {
                         String tableName = selectedNode.getUserObject().toString();
 
@@ -261,7 +257,6 @@ public class DatabaseManager extends JFrame {
     }
 
     private void openQueryTool() {
-        // Create the dialog panel
         JPanel panel = new JPanel(new BorderLayout());
 
         JTextArea queryArea = new JTextArea(10, 50);
@@ -273,14 +268,12 @@ public class DatabaseManager extends JFrame {
         JButton executeButton = new JButton("Execute");
         panel.add(executeButton, BorderLayout.SOUTH);
 
-        // Create a dialog for the user
         JDialog queryDialog = new JDialog(this, "Query Tool", true);
         queryDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         queryDialog.add(panel);
         queryDialog.pack();
         queryDialog.setLocationRelativeTo(this);
 
-        // Add ActionListener to the execute button
         executeButton.addActionListener(_ -> {
             String query = queryArea.getText().trim();
             if (query.isEmpty()) {
@@ -295,20 +288,16 @@ public class DatabaseManager extends JFrame {
 
     private void executeQuery(String query, JDialog dialog) {
         try {
-            // Execute the query
             Statement stmt = connection.createStatement();
             ResultSet rs = stmt.executeQuery(query);
             MetaData result = getMetaData(rs);
 
-            // Show the results in a JTable
             JTable resultTable = new JTable(new DefaultTableModel(result.data(), result.columnNames()));
             JScrollPane resultScrollPane = new JScrollPane(resultTable);
 
-            // Display the results in the dialog
             JPanel resultPanel = new JPanel(new BorderLayout());
             resultPanel.add(resultScrollPane, BorderLayout.CENTER);
 
-            // Set the new content to the dialog
             dialog.setContentPane(resultPanel);
             dialog.revalidate();
             dialog.repaint();
@@ -328,7 +317,6 @@ public class DatabaseManager extends JFrame {
         }
 
         try {
-            // Отримуємо структуру таблиці
             metaData resultMetaData = getMetaData(tableName);
 
             int result = JOptionPane.showConfirmDialog(this, resultMetaData.panel(), "Insert Record", JOptionPane.OK_CANCEL_OPTION);
@@ -336,7 +324,6 @@ public class DatabaseManager extends JFrame {
                 StringBuilder query = new StringBuilder("INSERT INTO " + tableName + " (");
                 StringBuilder values = new StringBuilder("VALUES (");
 
-                // Формуємо запит
                 for (Map.Entry<String, JTextField> entry : resultMetaData.fields().entrySet()) {
                     query.append(entry.getKey()).append(",");
                     values.append("'").append(entry.getValue().getText().replace("'", "''")).append("',");
@@ -346,7 +333,6 @@ public class DatabaseManager extends JFrame {
                 values.setLength(values.length() - 1);
                 query.append(") ").append(values).append(");");
 
-                // Виконання запиту
                 Statement statement = connection.createStatement();
                 statement.executeUpdate(query.toString());
                 JOptionPane.showMessageDialog(this, "Record inserted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -364,7 +350,6 @@ public class DatabaseManager extends JFrame {
         JPanel panel = new JPanel(new GridLayout(0, 2));
         HashMap<String, JTextField> fields = new HashMap<>();
 
-        // Додаємо поля для введення значень
         while (columns.next()) {
             String columnName = columns.getString("COLUMN_NAME");
             panel.add(new JLabel(columnName + ":"));
@@ -375,8 +360,7 @@ public class DatabaseManager extends JFrame {
         return new metaData(panel, fields);
     }
 
-    private record metaData(JPanel panel, HashMap<String, JTextField> fields) {
-    }
+    private record metaData(JPanel panel, HashMap<String, JTextField> fields) { }
 
     private void editRecord(String tableName) {
         if (tableName == null || tableName.trim().isEmpty()) {
@@ -394,22 +378,19 @@ public class DatabaseManager extends JFrame {
         }
 
         try {
-            // Отримуємо структуру таблиці
             metaData resultMetaData = getMetaData(tableName);
 
             int result = JOptionPane.showConfirmDialog(this, resultMetaData.panel(), "Edit Record", JOptionPane.OK_CANCEL_OPTION);
             if (result == JOptionPane.OK_OPTION) {
                 StringBuilder query = new StringBuilder("UPDATE " + tableName + " SET ");
 
-                // Формуємо запит
                 for (Map.Entry<String, JTextField> entry : resultMetaData.fields().entrySet()) {
                     query.append(entry.getKey()).append("='").append(entry.getValue().getText().replace("'", "''")).append("',");
                 }
 
-                query.setLength(query.length() - 1); // Видаляємо зайву кому
+                query.setLength(query.length() - 1);
                 query.append(" WHERE id = ").append(primaryKeyValue).append(";");
 
-                // Виконання запиту
                 Statement statement = connection.createStatement();
                 statement.executeUpdate(query.toString());
                 JOptionPane.showMessageDialog(this, "Record updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -438,7 +419,6 @@ public class DatabaseManager extends JFrame {
         try {
             String query = "DELETE FROM " + tableName + " WHERE id = " + primaryKeyValue;
 
-            // Виконання запиту
             Statement statement = connection.createStatement();
             int rowsAffected = statement.executeUpdate(query);
             if (rowsAffected > 0) {
@@ -474,7 +454,6 @@ public class DatabaseManager extends JFrame {
         }
 
         try {
-            // Get the column type to adjust the query
             DatabaseMetaData metaData = connection.getMetaData();
             ResultSet columns = metaData.getColumns(null, null, tableName, columnName);
             if (!columns.next()) {
@@ -487,14 +466,11 @@ public class DatabaseManager extends JFrame {
             String query;
 
             if (columnType.equals("INTEGER") || columnType.equals("BIGINT") || columnType.equals("SMALLINT") || columnType.equals("serial")) {
-                // For numeric columns, use exact matching
                 query = "SELECT * FROM " + tableName + " WHERE " + columnName + " = " + Integer.parseInt(searchTerm);
             } else{
-                // For other types (like VARCHAR, TEXT), use LIKE for pattern matching
                 query = "SELECT * FROM " + tableName + " WHERE " + columnName + " LIKE '%" + searchTerm.replace("'", "''") + "%'";
             }
 
-            // Execute the query
             Statement stmt = connection.createStatement();
             ResultSet rs = stmt.executeQuery(query);
             setModelTableView(rs);
