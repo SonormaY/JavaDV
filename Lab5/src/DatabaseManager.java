@@ -362,6 +362,22 @@ public class DatabaseManager extends JFrame {
 
     private record metaData(JPanel panel, HashMap<String, JTextField> fields) { }
 
+    private String getPrimaryColumnName(String tableName) {
+        String primaryColumnName = null;
+        try {
+            DatabaseMetaData metaData = connection.getMetaData();
+            ResultSet primaryKeys = metaData.getPrimaryKeys(null, null, tableName);
+            if (primaryKeys.next()) {
+                primaryColumnName = primaryKeys.getString("COLUMN_NAME");
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error getting primary key column name: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+
+        return primaryColumnName;
+    }
+
     private void editRecord(String tableName) {
         if (tableName == null || tableName.trim().isEmpty()) {
             tableName = JOptionPane.showInputDialog(this, "Enter table name for editing:", "Edit Record", JOptionPane.PLAIN_MESSAGE);
@@ -380,6 +396,8 @@ public class DatabaseManager extends JFrame {
         try {
             metaData resultMetaData = getMetaData(tableName);
 
+
+
             int result = JOptionPane.showConfirmDialog(this, resultMetaData.panel(), "Edit Record", JOptionPane.OK_CANCEL_OPTION);
             if (result == JOptionPane.OK_OPTION) {
                 StringBuilder query = new StringBuilder("UPDATE " + tableName + " SET ");
@@ -388,8 +406,9 @@ public class DatabaseManager extends JFrame {
                     query.append(entry.getKey()).append("='").append(entry.getValue().getText().replace("'", "''")).append("',");
                 }
 
+                String primaryColumnName = getPrimaryColumnName(tableName);
                 query.setLength(query.length() - 1);
-                query.append(" WHERE id = ").append(primaryKeyValue).append(";");
+                query.append(" WHERE ").append(primaryColumnName).append(" = ").append(primaryKeyValue).append(";");
 
                 Statement statement = connection.createStatement();
                 statement.executeUpdate(query.toString());
@@ -410,6 +429,7 @@ public class DatabaseManager extends JFrame {
             }
         }
 
+        String primaryColumnName = getPrimaryColumnName(tableName);
         String primaryKeyValue = JOptionPane.showInputDialog(this, "Enter primary key value for the record to delete:", "Delete Record", JOptionPane.PLAIN_MESSAGE);
         if (primaryKeyValue == null || primaryKeyValue.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Primary key value cannot be empty!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -417,7 +437,7 @@ public class DatabaseManager extends JFrame {
         }
 
         try {
-            String query = "DELETE FROM " + tableName + " WHERE id = " + primaryKeyValue;
+            String query = "DELETE FROM " + tableName + " WHERE " + primaryColumnName + " = " + primaryKeyValue;
 
             Statement statement = connection.createStatement();
             int rowsAffected = statement.executeUpdate(query);
